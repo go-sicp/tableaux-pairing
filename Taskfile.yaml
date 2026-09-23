@@ -1,0 +1,112 @@
+version: "3"
+
+vars:
+  GO_PKG_PAIR: github.com/go-sicp/tableaux-pairing/pair
+  AAR_OUT: tableaux-pairing.aar
+  CLI_BIN: bin/tableaux-pair
+  ANDROID_API_MIN: "26"
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task: --list-all
+
+  # ---------------------------------------------------------------- build
+
+  build:
+    desc: "Build everything available locally (CLI + AAR if gomobile is on PATH)"
+    cmds:
+      - task: build:cli
+      - task: vet
+      - >-
+        if command -v gomobile >/dev/null; then
+          task build:aar;
+        else
+          echo "gomobile not in PATH; skipping AAR build (run: go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init)"; fi
+
+  build:cli:
+    desc: "Build the workstation CLI (tableaux-pair) for the host platform"
+    cmds:
+      - mkdir -p bin
+      - go build -o {{.CLI_BIN}} ./cmd/tableaux-pair/
+
+  build:aar:
+    desc: "gomobile bind ./pair -> tableaux-pairing.aar (consumed by tableaux-companion-android)"
+    preconditions:
+      - sh: "command -v gomobile"
+        msg: "gomobile not in PATH. Install with: go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init"
+    cmds:
+      - gomobile bind -target=android -androidapi={{.ANDROID_API_MIN}} -o {{.AAR_OUT}} {{.GO_PKG_PAIR}}
+
+  # ----------------------------------------------------------------- test
+
+  test:
+    desc: "Run Go unit tests"
+    cmds:
+      - go test ./...
+
+  test:race:
+    desc: "Run Go tests with the race detector"
+    cmds:
+      - go test -race ./...
+
+  vet:
+    desc: "go vet on all packages"
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: "gofmt -s in place"
+    cmds:
+      - gofmt -s -w .
+
+  fmt:check:
+    desc: "Fail if any file is not gofmt -s clean"
+    cmds:
+      - >-
+        diff=$(gofmt -s -l . | tee /dev/stderr);
+        if [ -n "$diff" ]; then echo "gofmt -s issues found"; exit 1; fi
+
+  staticcheck:
+    desc: "Run staticcheck (skipped if not installed)"
+    cmds:
+      - >-
+        if command -v staticcheck >/dev/null; then
+          staticcheck ./...;
+        else
+          echo "staticcheck not installed; skipping"; fi
+
+  ci:
+    desc: "Composite gate for CI: fmt:check + vet + test + build:cli"
+    cmds:
+      - task: fmt:check
+      - task: vet
+      - task: test
+      - task: build:cli
+      - task: staticcheck
+
+  # ---------------------------------------------------------- companion app
+
+  publish:aar:
+    desc: "Copy the built AAR into ../tableaux-companion-android/app/libs/"
+    deps: [build:aar]
+    preconditions:
+      - sh: "test -d ../tableaux-companion-android"
+        msg: "../tableaux-companion-android not found"
+    cmds:
+      - mkdir -p ../tableaux-companion-android/app/libs
+      - cp {{.AAR_OUT}} ../tableaux-companion-android/app/libs/{{.AAR_OUT}}
+      - 'echo "wrote ../tableaux-companion-android/app/libs/{{.AAR_OUT}}"'
+
+  # ---------------------------------------------------------- pair CLI flow
+
+  cli:help:
+    desc: "Print the CLI's own usage"
+    deps: [build:cli]
+    cmds:
+      - ./{{.CLI_BIN}} --help || true
+
+  clean:
+    cmds:
+      - rm -rf bin/ {{.AAR_OUT}} tableaux-pairing-sources.jar

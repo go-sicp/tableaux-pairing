@@ -1,0 +1,10 @@
+# Build output and generated artefacts, not sources.
+bin/
+*.aar
+*.apk
+
+# Android Studio / Gradle
+**/build/
+.gradle/
+local.properties
+app/libs/*.aar

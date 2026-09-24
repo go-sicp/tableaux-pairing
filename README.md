@@ -1,7 +1,7 @@
 # tableaux-pairing
 
 Go module powering the **QR-driven fleet-pairing companion app** for
-[`tableaux-eink`](../tableaux-eink). The Philips Tableaux 32BDL5150I/00
+`tableaux-eink`. The Philips Tableaux 32BDL5150I/00
 has no NFC controller (Ethernet / Wi-Fi / Bluetooth 5.1 only), so
 pairing happens through the QR shown by the running display + a
 workstation-side or phone-side OpenBao client.
@@ -157,7 +157,7 @@ at rest.
 |---|---|
 | Display QR generation | `tableaux-eink/eink-grpc/.../qr/ConnectUri.kt` |
 | Display QR parsing on phone | `tableaux-pairing/connecturi/` |
-| OpenBao schema (`secret/fleet/<serial>`) | both must agree on field names — checked by [pair tests](pair/pair_test.go) and [RUNBOOK §1.7](../tableaux-eink/RUNBOOK.md#17-store-in-the-secret-manager) |
+| OpenBao schema (`secret/fleet/<serial>`) | both must agree on field names — checked by [pair tests](pair/pair_test.go) and `tableaux-eink` RUNBOOK §1.7 (not published) |
 | AppRole roles (`fleet-manager`, `fleet-display`) | runbook §0.3 / §0.4 |
 | Bundle on-the-wire JSON | `pair.Bundle.MarshalJSON` (this repo) |
 

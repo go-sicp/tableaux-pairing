@@ -1,6 +1,6 @@
 module github.com/go-sicp/tableaux-pairing
 
-go 1.26.0
+go 1.27.1
 
 require golang.org/x/mobile v0.0.0-20260908204917-8b95e45f8d3e
 
